@@ -40,7 +40,7 @@
 	releasedrain = 30
 	chargedrain = 0
 	chargetime = 15
-	recharge_time = 10 SECONDS
+	recharge_time = 15 SECONDS
 
 /obj/projectile/magic/unholy_grasp
 	name = "viceral organ net"
@@ -58,7 +58,7 @@
 	visible_message(span_danger("\The [src] ensnares [carbon] in vicera!"))
 	to_chat(carbon, span_danger("\The [src] ensnares you!"))
 	carbon.Knockdown(knockdown)
-	carbon.apply_status_effect(/datum/status_effect/debuff/netted, 30 SECONDS)
+	carbon.apply_status_effect(/datum/status_effect/debuff/netted, 10 SECONDS)
 	playsound(src, 'sound/combat/caught.ogg', 50, TRUE)
 
 /obj/effect/proc_holder/spell/invoked/revel_in_slaughter
