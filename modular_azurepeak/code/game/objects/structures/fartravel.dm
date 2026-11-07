@@ -24,6 +24,9 @@
 	if(departing_mob != user && departing_mob.client)
 		to_chat(user, "<span class='warning'>This one retains their free will. It's their choice if they want to leave the round or not.</span>")
 		return
+	if(departing_mob.stat == DEAD && !departing_mob.client) //died and respawned or disconnected, no free slots for far-traveling someone that already opened a slot
+		to_chat(user, "<span class='warning'>This one is long dead and has passed unto another place. They have already left.</span>")
+		return
 	if(alert("Are you sure you want to [departing_mob == user ? "depart the round for good (you" : "send this person away (they"] will be removed from the current round, the job slot freed)?", "Departing", "Confirm", "Cancel") != "Confirm")
 		return
 	if(user.incapacitated() || QDELETED(departing_mob) || (departing_mob != user && departing_mob.client) || get_dist(src, dropping) > 2 || get_dist(src, user) > 2)
@@ -40,7 +43,7 @@
 		mob_job = SSjob.GetJob(departing_mob.mind.assigned_role)
 		if(mob_job)
 			mob_job.current_positions = max(0, mob_job.current_positions - 1)
-			var/target_job = SSrole_class_handler.get_advclass_by_name(user.advjob)
+			var/target_job = SSrole_class_handler.get_advclass_by_name(departing_mob.advjob)
 			if(target_job)
 				SSrole_class_handler.adjust_class_amount(target_job, -1)
 	if(!length(departing_mob.contents))
@@ -60,22 +63,20 @@
 			if(removing_bounty.target == departing_mob.real_name)
 				GLOB.head_bounties -= removing_bounty
 	GLOB.chosen_names -= departing_mob.real_name
-	LAZYREMOVE(GLOB.actors_list[SSjob.bitflag_to_department(mob_job.department_flag, mob_job.obsfuscated_job)], departing_mob.mobid)
+	if(!mob_job)
+		LAZYREMOVE(GLOB.actors_list[SSjob.bitflag_to_department(WANDERERS, FALSE)], departing_mob.mobid)
+	else
+		LAZYREMOVE(GLOB.actors_list[SSjob.bitflag_to_department(mob_job.department_flag, mob_job.obsfuscated_job)], departing_mob.mobid)
 	LAZYREMOVE(GLOB.roleplay_ads, departing_mob.mobid)
 	message_admins(dat)
 	log_admin(dat)
 	if(departing_mob.stat == DEAD)
 		departing_mob.visible_message("<span class='notice'>[user] sends the body of [departing_mob] away. They're someone else's problem now.</span>")
 	else
-		departing_mob.visible_message("<span class='notice'>[departing_mob == user ? "Out of their own volition, " : "Ushered by [user], "][departing_mob] leaves the vale.</span>")
-		// If departure is a lord, remove them from found_lords to prevent false omen triggers
-	if(departing_mob.mind && departing_mob.ckey)
-		if(departing_mob.mind.assigned_role == "Grand Duke" || departing_mob.mind.assigned_role == "Grand Duchess")
-			if(GLOB.found_lords[departing_mob.ckey])
-				GLOB.found_lords -= departing_mob.ckey
-	if(departing_mob.has_embedded_objects())
-		var/list/embeds = departing_mob.get_embedded_objects()
-		for(var/thing in embeds)
-			QDEL_NULL(thing)
+		departing_mob.visible_message("<span class='notice'>[departing_mob == user ? "Out of their own volition, " : "Ushered by [user], "][departing_mob] leaves [SSmapping.map_adjustment.realm_name].</span>")
+	departing_mob.far_travel_cleanup(departing_mob.mind, departing_mob.ckey)
+	if(departing_mob.client)
+		// Move players to lobby/new_player so they can choose if they want to spectate. For potential latency reduction
+		departing_mob.returntolobby()
 	QDEL_NULL(departing_mob)
 

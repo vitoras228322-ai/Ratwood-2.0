@@ -35,24 +35,25 @@
 	simple_detect_bonus = 20
 	deaggroprob = 0
 	defprob = 50
-	candodge = TRUE
+	mob_can_dodge = TRUE
 	// del_on_deaggro = 44 SECONDS
 	retreat_health = 0.3
 	food = 0
 	attack_sound = null
-	dodgetime = 40
+	dodgetime = 4 SECONDS
 	aggressive = 1
 	ranged = TRUE
 	rapid = 3
 	projectiletype = /obj/projectile/magic/frostbolt/greater
 	ranged_message = "throws icy magick"
+	ranged_cooldown_time = 6 SECONDS
 	var/shroom_cd = 0
 	var/summon_cd = 0
 	inherent_spells = list(/obj/effect/proc_holder/spell/invoked/create_shrooms)
 
 /obj/projectile/magic/frostbolt/greater
 	name = "greater frostbolt"
-	damage = 25
+	damage = 15 // Lower damage, but it shoots in a wave of 3, so it totals out to 45 damage every 6 seconds, bypassing your armor
 	range = 6
 	speed = 6 //higher is slower
 
@@ -90,7 +91,7 @@
 		target_turf = target.loc
 	for(var/turf/turf as anything in RANGE_TURFS(3,target_turf))
 		if(prob(30))
-			new /obj/structure/glowshroom/dendorite(turf)
+			new /obj/effect/temp_visual/glowshroom_dendorite(turf)
 
 
 /mob/living/simple_animal/hostile/retaliate/rogue/fae/sylph/death(gibbed)
@@ -131,3 +132,7 @@
 			return FALSE
 		treeguy.create_shroom(targets[1])
 		treeguy.shroom_cd = world.time
+
+/mob/living/simple_animal/hostile/retaliate/rogue/fae/sylph/awaken_summon(mob/living/carbon/human/master, ckey)
+	..()
+	ranged_cooldown = 6 SECONDS

@@ -175,10 +175,13 @@
 		/datum/sprite_accessory/ears/big/acrador_short,
 		/datum/sprite_accessory/ears/big/sandfox_large,
 		/datum/sprite_accessory/ears/lynx,
+		/datum/sprite_accessory/ears/four_ears,
 		/datum/sprite_accessory/ears/dendorite,
 		/datum/sprite_accessory/ears/eoran,
 		/datum/sprite_accessory/ears/pestran,
-		/datum/sprite_accessory/ears/zorzor
+		/datum/sprite_accessory/ears/zorzor,
+		/datum/sprite_accessory/ears/wispy,
+		/datum/sprite_accessory/ears/small
 		)
 
 /datum/customizer/organ/ears/anthro
@@ -246,7 +249,15 @@
 		/datum/sprite_accessory/ears/big/acrador_short,
 		/datum/sprite_accessory/ears/big/sandfox_large,
 		/datum/sprite_accessory/ears/lynx,
-		/datum/sprite_accessory/ears/zorzor
+		/datum/sprite_accessory/ears/four_ears,
+		/datum/sprite_accessory/ears/shadekin,
+		/datum/sprite_accessory/ears/shadekin/band_left,
+		/datum/sprite_accessory/ears/shadekin/band_right,
+		/datum/sprite_accessory/ears/shadekin/fluffy,
+		/datum/sprite_accessory/ears/shadekin/smooth,
+		/datum/sprite_accessory/ears/zorzor,
+		/datum/sprite_accessory/ears/wispy,
+		/datum/sprite_accessory/ears/small
 		)
 
 /datum/customizer/organ/ears/lizard
@@ -275,7 +286,7 @@
 
 /datum/customizer_choice/organ/ears/tiefling
 	name = "Tiefling Ears"
-	organ_type = /obj/item/organ/ears
+	organ_type = /obj/item/organ/ears/tiefling
 	sprite_accessories = list(
 		/datum/sprite_accessory/ears/elf,
 		/datum/sprite_accessory/ears/elfw,
@@ -298,6 +309,7 @@
 		/datum/sprite_accessory/ears/rabbit,
 		/datum/sprite_accessory/ears/bunny,
 		/datum/sprite_accessory/ears/bunny_perky,
+		/datum/sprite_accessory/ears/bunny_long,
 		/datum/sprite_accessory/ears/big/rabbit_large,
 		/datum/sprite_accessory/ears/cat_big,
 		/datum/sprite_accessory/ears/cat_normal,
@@ -336,6 +348,11 @@
 		/datum/sprite_accessory/ears/big/acrador_short,
 		/datum/sprite_accessory/ears/big/sandfox_large,
 		/datum/sprite_accessory/ears/lynx,
+		/datum/sprite_accessory/ears/four_ears,
+		/datum/sprite_accessory/ears/dendorite,
+		/datum/sprite_accessory/ears/eoran,
+		/datum/sprite_accessory/ears/pestran,
+		/datum/sprite_accessory/ears/zorzor
 		)
 
 /datum/customizer/organ/ears/harpy
@@ -367,4 +384,20 @@
 		/datum/sprite_accessory/ears/perky,
 		/datum/sprite_accessory/ears/big/sandfox_large,
 		/datum/sprite_accessory/ears/lynx,
+		/datum/sprite_accessory/ears/wispy,
+		/datum/sprite_accessory/ears/small
 	)
+
+/datum/customizer_choice/organ/ears/wings
+	name = "Aasimar Ears"
+	organ_type = /obj/item/organ/ears
+	sprite_accessories = list(
+		/datum/sprite_accessory/ears/elf,
+		/datum/sprite_accessory/ears/elfw,
+		/datum/sprite_accessory/ears/wispy,
+		/datum/sprite_accessory/ears/small,
+		)
+
+/datum/customizer/organ/ears/wings
+	customizer_choices = list(/datum/customizer_choice/organ/ears/wings)
+	allows_disabling = TRUE

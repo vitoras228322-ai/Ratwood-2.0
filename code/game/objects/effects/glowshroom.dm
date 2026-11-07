@@ -8,7 +8,8 @@
 	density = FALSE
 	icon = 'icons/roguetown/misc/foliage.dmi'
 	icon_state = "glowshroom1" //replaced in New
-	layer = SPACEVINE_LAYER //A bit high but keeps it from fucking layering UNDER EVERYTHING
+	layer = BELOW_OBJ_LAYER
+	plane = GAME_PLANE
 	light_system = MOVABLE_LIGHT
 	max_integrity = 30
 	blade_dulling = DULLING_CUT
@@ -31,7 +32,7 @@
 		var/throwdir = get_dir(src, mover)
 		var/mob/living/L = mover
 
-		if(HAS_TRAIT(L, TRAIT_KNEESTINGER_IMMUNITY)) //Dendor kneestinger immunity
+		if(HAS_TRAIT(L, TRAIT_KNEESTINGER_IMMUNITY) || HAS_TRAIT(L, TRAIT_BOGWALKER)) //Dendor kneestinger immunity
 			return TRUE
 
 		if(L.mind)
@@ -56,7 +57,7 @@
 	if(!isliving(movable_victim))
 		return FALSE
 	var/mob/living/victim = movable_victim
-	if(HAS_TRAIT(victim, TRAIT_KNEESTINGER_IMMUNITY)) //Dendor kneestinger immunity
+	if(HAS_TRAIT(victim, TRAIT_KNEESTINGER_IMMUNITY) || HAS_TRAIT(victim, TRAIT_BOGWALKER)) //Dendor kneestinger immunity
 		return FALSE
 	if(victim.mind)
 		if(world.time > victim.last_client_interact + 0.2 SECONDS)
@@ -131,8 +132,22 @@
 	I.desc = ""
 	qdel(src)
 
+/obj/effect/temp_visual/glowshroom_dendorite
+	icon = 'icons/roguetown/misc/foliage.dmi'
+	icon_state = "glowshroom1" //replaced in New
+	duration = 5 SECONDS
+	alpha = 0
+
+/obj/effect/temp_visual/glowshroom_dendorite/Initialize(mapload)
+	. = ..()
+	animate(src, 5 SECONDS, alpha = 255)
+
+/obj/effect/temp_visual/glowshroom_dendorite/timed_out()
+	new /obj/structure/glowshroom/dendorite(get_turf(src))
+	return ..()
+
 /obj/structure/glowshroom/dendorite
-	var/timeleft = 10 MINUTES
+	var/timeleft = 10 SECONDS
 
 /obj/structure/glowshroom/dendorite/Initialize(mapload)
 	. = ..()

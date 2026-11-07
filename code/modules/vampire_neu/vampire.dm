@@ -6,13 +6,14 @@ GLOBAL_LIST_EMPTY(vampire_objects)
 	antagpanel_category = "Vampire"
 	job_rank = ROLE_VAMPIRE
 	antag_hud_type = ANTAG_HUD_VAMPIRE
-	antag_hud_name = "Vspawn"
+	antag_hud_name = "vamp_spawn_hud"
 	confess_lines = list(
 		"I WANT YOUR BLOOD!",
 		"DRINK THE BLOOD!",
 		"CHILD OF KAIN!",
 	)
 	rogue_enabled = TRUE
+	typecache_datum_blacklist = list(/datum/antagonist/zombie) //the rot cannot claim what the Curse already holds
 	show_in_roundend = FALSE
 	show_in_antagpanel = FALSE // Base vampire shouldn't be directly selectable - use Vampire Lord or specific subtypes
 	var/datum/clan/default_clan = /datum/clan/nosferatu
@@ -24,6 +25,8 @@ GLOBAL_LIST_EMPTY(vampire_objects)
 	var/datum/clan/forcing_clan
 	var/generation
 	var/research_points = 10
+	var/research_spent = 0
+	var/list/pre_embrace_state
 
 /datum/antagonist/vampire/New(incoming_clan = /datum/clan/nosferatu, forced_clan = FALSE, generation)
 	. = ..()
@@ -68,6 +71,9 @@ GLOBAL_LIST_EMPTY(vampire_objects)
 		return span_boldnotice("Another deadite.")
 
 /datum/antagonist/vampire/on_gain()
+	// the Curse takes precedence over the rot - covers dying to it partway through being sired
+	owner?.remove_antag_datum(/datum/antagonist/zombie)
+	owner?.current?.remove_status_effect(/datum/status_effect/zombie_infection)
 	SSmapping.retainer.vampires |= owner
 	//move_to_spawnpoint()
 	owner.special_role = name
@@ -129,7 +135,7 @@ GLOBAL_LIST_EMPTY(vampire_objects)
 
 /datum/antagonist/vampire/proc/create_custom_clan(mob/living/carbon/human/vampdude)
 	// Get custom clan name
-	custom_clan_name = input(vampdude, "Enter your custom clan name:", "Custom Clan", "Custom Clan") as text|null
+	custom_clan_name = sanitize(input(vampdude, "Enter your custom clan name:", "Custom Clan", "Custom Clan") as text|null)
 	if(!custom_clan_name)
 		custom_clan_name = "Custom Clan"
 
@@ -146,8 +152,21 @@ GLOBAL_LIST_EMPTY(vampire_objects)
 	to_chat(vampdude, span_notice("You are now a member of the [custom_clan_name] clan with [length(selected_covens)] coven(s)."))
 
 /datum/antagonist/vampire/proc/after_gain()
-	owner.current.set_bloodpool(owner.current.maxbloodpool / 100 * INITIAL_BLOODPOOL_PERCENTAGE)
+	owner.current.set_bloodpool(owner.current.get_maxbloodpool() / 100 * INITIAL_BLOODPOOL_PERCENTAGE)
+	antag_hud_name = get_hud_icon()
 	add_antag_hud(antag_hud_type, antag_hud_name, owner.current)
+
+/// The HUD icon for this vampire's rank
+/datum/antagonist/vampire/proc/get_hud_icon()
+	if(owner?.current && HAS_TRAIT(owner.current, TRAIT_CLAN_LEADER))
+		return "vamp_lord_hud"
+	return "vamp_spawn_hud"
+
+/// Re-picks the HUD icon after a rank change, such as gaining or losing clan leadership
+/datum/antagonist/vampire/proc/update_hud_icon()
+	antag_hud_name = get_hud_icon()
+	if(owner?.current && owner.antag_hud == GLOB.huds[antag_hud_type])
+		set_antag_hud(owner.current, antag_hud_name)
 
 /datum/antagonist/vampire/on_removal()
 	remove_antag_hud(antag_hud_type, owner.current)

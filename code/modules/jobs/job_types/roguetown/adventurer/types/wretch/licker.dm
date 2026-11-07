@@ -8,7 +8,6 @@
 	category_tags = list(CTAG_WRETCH)
 	traits_applied = list(
 		TRAIT_STEELHEARTED,
-		TRAIT_SILVER_WEAK,
 	)
 	maximum_possible_slots = 2
 	applies_post_equipment = FALSE
@@ -54,7 +53,6 @@
 /datum/reagent/vampsolution/on_mob_metabolize(mob/living/M, mob/living/S)
 	M.overlay_fullscreen("druqk", /atom/movable/screen/fullscreen/druqks)
 	M.set_drugginess(30)
-	M.update_body_parts_head_only()
 	if(M.client)
 		ADD_TRAIT(M, TRAIT_DRUQK, "based")
 		SSdroning.area_entered(get_area(M), M.client)
@@ -66,4 +64,3 @@
 	if(M.client)
 		REMOVE_TRAIT(M, TRAIT_DRUQK, "based")
 		SSdroning.play_area_sound(get_area(M), M.client)
-	M.update_body_parts_head_only()

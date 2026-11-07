@@ -23,7 +23,7 @@
 	)
 	expert_name = "Weaponsmith"
 	max_untraited_level = SKILL_LEVEL_APPRENTICE
-	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN)
+	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN, TRAIT_ENGINEER = SKILL_LEVEL_JOURNEYMAN)
 
 /datum/skill/craft/armorsmithing
 	name = "Armorsmithing"
@@ -34,7 +34,7 @@
 	)
 	expert_name = "Armorsmith"
 	max_untraited_level = SKILL_LEVEL_APPRENTICE
-	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN)
+	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN, TRAIT_ENGINEER = SKILL_LEVEL_JOURNEYMAN)
 
 /datum/skill/craft/blacksmithing
 	name = "Blacksmithing"
@@ -46,7 +46,7 @@
 	)
 	expert_name = "Blacksmith"
 	max_untraited_level = SKILL_LEVEL_APPRENTICE
-	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN)
+	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN, TRAIT_ENGINEER = SKILL_LEVEL_JOURNEYMAN)
 
 /datum/skill/craft/smelting
 	name = "Smelting"
@@ -59,7 +59,7 @@
 	)
 	expert_name = "Smelter"
 	max_untraited_level = SKILL_LEVEL_APPRENTICE
-	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN)
+	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN, TRAIT_ENGINEER = SKILL_LEVEL_LEGENDARY)
 
 
 /datum/skill/craft/carpentry
@@ -87,15 +87,6 @@
 	TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY,
 	TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN)
 
-/datum/skill/craft/traps
-	name = "Trapmaking"
-	desc = "Determines whether you can craft mantraps and if you can spot and disable traps."
-	dreams = list(
-		"...you spin a quiet silver wire across a hallway, lying in wait for your prey. The monstrous pale volf approaches. This time, you are prepared...",
-		"...the gleam of the trap's sharp teeth catches the dim light as you conceal it beneath layers of brush and foliage. To the untrained eye, it's nothing more than a harmless patch of grass - but you know better..."
-	)
-	expert_name = "Trapper"
-
 /datum/skill/craft/engineering
 	name = "Engineering"
 	desc = "Determines whether you can craft or repair various mechanical structures including lever, trapdoors, and bronze items such as bronze limbs, grappler etc."
@@ -106,7 +97,7 @@
 	)
 	expert_name = "Engineer"
 	max_untraited_level = SKILL_LEVEL_APPRENTICE
-	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN)
+	trait_uncap = list(TRAIT_SMITHING_EXPERT = SKILL_LEVEL_LEGENDARY, TRAIT_SELF_SUSTENANCE = SKILL_LEVEL_JOURNEYMAN, TRAIT_ENGINEER = SKILL_LEVEL_LEGENDARY)
 
 
 /datum/skill/craft/cooking

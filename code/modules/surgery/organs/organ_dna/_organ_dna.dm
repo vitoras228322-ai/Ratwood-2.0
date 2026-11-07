@@ -39,12 +39,14 @@
 /datum/organ_dna/penis
 	var/penis_size = DEFAULT_PENIS_SIZE
 	var/functional = TRUE
+	var/sheath_type = SHEATH_TYPE_NONE
 
 /datum/organ_dna/penis/imprint_organ(obj/item/organ/organ)
 	..()
 	var/obj/item/organ/penis/penis_organ = organ
 	penis_organ.penis_size = penis_size
 	penis_organ.functional = functional
+	penis_organ.sheath_type = sheath_type
 
 /datum/organ_dna/testicles
 	var/ball_size = DEFAULT_TESTICLES_SIZE
@@ -58,13 +60,14 @@
 
 /datum/organ_dna/breasts
 	var/breast_size = DEFAULT_BREASTS_SIZE
-	var/lactating = FALSE
+	var/lactation_mode = LACTATION_DISABLED
 
 /datum/organ_dna/breasts/imprint_organ(obj/item/organ/organ)
 	..()
 	var/obj/item/organ/breasts/breasts_organ = organ
 	breasts_organ.breast_size = breast_size
-	breasts_organ.lactating = lactating
+	breasts_organ.lactating = (lactation_mode == LACTATION_ENABLED)
+	breasts_organ.lactates_on_impregnation = (lactation_mode == LACTATION_AFTER_IMPREGNATION)
 	breasts_organ.milk_max = max(75, breasts_organ.breast_size * 100)
 
 /datum/organ_dna/vagina
@@ -74,3 +77,21 @@
 	..()
 	var/obj/item/organ/vagina/vagina_organ = organ
 	vagina_organ.fertility = fertility
+
+/datum/organ_dna/wings
+	var/wings_color
+	var/wing_natural_gradient
+	var/wing_natural_color
+	var/wing_dye_gradient
+	var/wing_dye_color
+
+/datum/organ_dna/wings/imprint_organ(obj/item/organ/organ)
+	. = ..()
+	var/obj/item/organ/wings/wing_organ = organ
+	wing_organ.wings_color = wings_color
+	wing_organ.wing_natural_gradient = wing_natural_gradient
+	wing_organ.wing_natural_color = wing_natural_color
+	wing_organ.wing_dye_gradient = wing_dye_gradient
+	wing_organ.wing_dye_color = wing_dye_color
+
+

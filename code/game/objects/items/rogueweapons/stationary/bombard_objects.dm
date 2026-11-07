@@ -90,5 +90,5 @@ Firstly, the coordinates device. Eventually, I'll add free aim. But for now...
 		/obj/item/bombard_barrel = 1
 		)
 	skillcraft = /datum/skill/combat/firearms
-	craftdiff = 1
+	craftdiff = 3
 	time = 60

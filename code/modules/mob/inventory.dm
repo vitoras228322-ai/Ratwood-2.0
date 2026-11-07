@@ -12,6 +12,15 @@
 	return get_item_for_held_index(get_inactive_hand_index())
 
 
+//Returns a list of items in both hands
+/mob/proc/get_held_items()
+	var/list/obj/item/held_item = list()
+	held_item += get_active_held_item()
+	held_item += get_inactive_held_item()
+
+	return held_item
+
+
 //Finds the opposite index for the active one (eg: upper left arm will find the item in upper right arm)
 //So we're treating each "pair" of limbs as a team, so "both" refers to them
 /mob/proc/get_inactive_hand_index()
@@ -157,6 +166,9 @@
 	if(get_item_for_held_index(hand_index) != null)
 		return FALSE
 //		dropItemToGround(get_item_for_held_index(hand_index), force = TRUE)
+	// For View Forensics. Every way into a hand ends here: clicking, quickdraw, telekinesis, pickpocketing.
+	// A null loc is a new item or one moved between my own slots, and nothing else is checked for mobs without a player
+	var/picked_up = ckey && I.loc && get(I, /mob) != src
 	I.forceMove(src)
 	held_items[hand_index] = I
 	I.layer = ABOVE_HUD_LAYER
@@ -175,6 +187,8 @@
 	if(hud_used)
 		hud_used.throw_icon?.update_icon()
 		hud_used.give_intent?.update_icon()
+	if(picked_up)
+		I.add_forensic_action(src, "picked up", routine = TRUE)
 	return hand_index
 
 //Puts the item into the first available left hand if possible and calls all necessary triggers/updates. returns 1 on success.
@@ -308,7 +322,7 @@
 		if(istype(src, /mob/living/carbon/human))
 			// Putting things into hands is a null loc ref why? no idea! But this works for now...
 			// Because the only alternative is removing something from someone, which puts it on the floor.
-			if(newloc == null) 
+			if(newloc == null)
 				var/mob/living/carbon/human/H = src
 				for(var/Item in H.get_equipped_items()) // Find this item
 					if(Item == I)
@@ -321,8 +335,7 @@
 	if(atkswinging)
 		stop_attack(FALSE)
 	if(I)
-		if(client)
-			client.screen -= I
+		remove_screen_object(I)
 		I.layer = initial(I.layer)
 		I.plane = initial(I.plane)
 		I.appearance_flags &= ~NO_CLIENT_COLOR
@@ -516,6 +529,8 @@
 			var/obj/item/bodypart/BP = new path ()
 			BP.owner = src
 			BP.held_index = i
+			// todo: should this just use attach_limb?
 			bodyparts += BP
+			bodyparts_by_zone[BP.body_zone] = BP
 			hand_bodyparts[i] = BP
 	..() //Don't redraw hands until we have organs for them

@@ -6,6 +6,7 @@
 	key_third_person = "cries"
 	message = "cries."
 	emote_type = EMOTE_AUDIBLE
+	needs_emotion = TRUE
 
 /mob/living/carbon/human/verb/emote_cry()
 	set name = "Cry"
@@ -25,7 +26,7 @@
 	key = "sexmoanlight"
 	emote_type = EMOTE_AUDIBLE
 	nomsg = TRUE
-	only_forced_audio = TRUE
+	needs_emotion = TRUE
 
 /datum/emote/living/carbon/human/sexmoanlight/can_run_emote(mob/living/user, status_check = TRUE , intentional)
 	. = ..()
@@ -38,7 +39,7 @@
 	key = "sexmoanhvy"
 	emote_type = EMOTE_AUDIBLE
 	nomsg = TRUE
-	only_forced_audio = TRUE
+	needs_emotion = TRUE
 
 /datum/emote/living/carbon/human/sexmoanhvy/can_run_emote(mob/living/user, status_check = TRUE , intentional)
 	. = ..()
@@ -134,10 +135,10 @@
 		return
 	var/mob/living/carbon/human/H = user
 	if(!H.dna.species.is_wagging_tail(H))
-		H.visible_message(span_biginfo("<span style='color:#[H.voice_color];text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'><b>[H]</b></span><span style='color: #c9c1ba;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'> wags [H.p_their()] tail.</span>"), runechat_message = "wags [H.p_their()] tail")
+		H.visible_message(span_biginfo("<span style='color:#[H.get_voice_color()];text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'><b>[H]</b></span><span style='color: #c9c1ba;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'> wags [H.p_their()] tail.</span>"), runechat_message = "wags [H.p_their()] tail")
 		H.dna.species.start_wagging_tail(H)
 	else
-		H.visible_message(span_biginfo("<span style='color:#[H.voice_color];text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'><b>[H]</b></span></span><span style='color: #c9c1ba;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'> stops wagging [H.p_their()] tail.</span>"), runechat_message = "stops wagging [H.p_their()] tail")
+		H.visible_message(span_biginfo("<span style='color:#[H.get_voice_color()];text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'><b>[H]</b></span></span><span style='color: #c9c1ba;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'> stops wagging [H.p_their()] tail.</span>"), runechat_message = "stops wagging [H.p_their()] tail")
 		H.dna.species.stop_wagging_tail(H)
 
 /datum/emote/living/carbon/human/wag/can_run_emote(mob/user, status_check = TRUE , intentional)
@@ -250,11 +251,11 @@
 	var/mob/living/carbon/human/H = user
 	if(H.has_status_effect(/datum/status_effect/debuff/harpy_flight))
 		H.visible_message(
-			span_biginfo("<span style='color:#[H.voice_color];text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'><b>[H]</b></span></span><span style='color: #c9c1ba;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'> spreads [H.p_their()] wings, preparing to fly!</span>"),
+			span_biginfo("<span style='color:#[H.get_voice_color()];text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'><b>[H]</b></span></span><span style='color: #c9c1ba;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'> spreads [H.p_their()] wings, preparing to fly!</span>"),
 			runechat_message = "spreads [H.p_their()] wings!"
 		)
 	else
 		H.visible_message(
-			span_biginfo("<span style='color:#[H.voice_color];text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'><b>[H]</b></span></span><span style='color: #c9c1ba;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'> flaps [H.p_their()] wings no more, as [H.p_they()] is back on the ground!</span>"),
+			span_biginfo("<span style='color:#[H.get_voice_color()];text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'><b>[H]</b></span></span><span style='color: #c9c1ba;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;'> flaps [H.p_their()] wings no more, as [H.p_they()] is back on the ground!</span>"),
 			runechat_message = "stops flapping [H.p_their()] wings!"
 		)

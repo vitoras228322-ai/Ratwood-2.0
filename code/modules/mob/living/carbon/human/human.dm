@@ -111,9 +111,42 @@
 	. = ..()
 
 	RegisterSignal(src, COMSIG_COMPONENT_CLEAN_ACT, PROC_REF(clean_blood))
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_KEENEARS), PROC_REF(on_keen_ears_trait_changed))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_KEENEARS), PROC_REF(on_keen_ears_trait_changed))
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_DECEIVING_MEEKNESS), PROC_REF(on_guarded_gained))
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_DECEIVING_MEEKNESS), PROC_REF(on_guarded_lost))
+	RegisterSignal(src, list(SIGNAL_ADDTRAIT(TRAIT_ANONYMOUS), SIGNAL_REMOVETRAIT(TRAIT_ANONYMOUS)), PROC_REF(on_anonymous_changed))
 	AddComponent(/datum/component/personal_crafting)
 	AddComponent(/datum/component/footstep, footstep_type, 1, 2)
 	GLOB.human_list += src
+	update_tongue_noise_verbs()
+	update_keen_ears_verb()
+
+/mob/living/carbon/human/proc/on_keen_ears_trait_changed(datum/source, trait)
+	SIGNAL_HANDLER
+	update_keen_ears_verb()
+
+/mob/living/carbon/human/proc/update_keen_ears_verb()
+	var/verb_path = /mob/living/carbon/human/verb/toggle_keen_ears_ic
+	verbs -= verb_path
+	if(HAS_TRAIT(src, TRAIT_KEENEARS))
+		verbs += verb_path
+
+/mob/living/carbon/human/proc/toggle_keen_ears()
+	if(!HAS_TRAIT(src, TRAIT_KEENEARS))
+		to_chat(src, span_warning("I do not possess keen ears."))
+		return FALSE
+	keen_ears_disabled = !keen_ears_disabled
+	if(keen_ears_disabled)
+		to_chat(src, span_notice("Your keen ears are now dulled."))
+	else
+		to_chat(src, span_notice("Your keen ears are now sharp again."))
+	return !keen_ears_disabled
+
+/mob/living/carbon/human/verb/toggle_keen_ears_ic()
+	set name = "Toggle Keen Ears"
+	set category = "IC"
+	toggle_keen_ears()
 
 /mob/living/carbon/human/ZImpactDamage(turf/T, levels)
 	var/obj/item/bodypart/affecting
@@ -155,12 +188,29 @@
 	dna.initialize_dna()
 
 /mob/living/carbon/human/Destroy()
+	if(SScity_assembly?.is_alderman(src))
+		var/departing_name = real_name
+		var/departing_job = job
+		SScity_assembly.demote_alderman("Alderman's mob was deleted")
+		SScity_assembly.notify_alderman_lost_ref(departing_name, departing_job, "disconnected")
 	QDEL_NULL(sexcon)
 	STOP_PROCESSING(SShumannpc, src)
 	QDEL_NULL(physiology)
 	QDEL_NULL(sunder_light_obj)
+	QDEL_NULL(devotion)
 	GLOB.human_list -= src
-	return ..()
+	if(current_fellowship)
+		current_fellowship.remove_member(src, reason = FELLOWSHIP_REASON_DESTROYED)
+		current_fellowship = null
+	if(length(incoming_fellowship_invites))
+		for(var/datum/weakref/W as anything in incoming_fellowship_invites)
+			var/datum/fellowship/F = W.resolve()
+			if(F)
+				F.remove_pending_invite(real_name)
+		incoming_fellowship_invites.Cut()
+	. = ..()
+	// after the parent chain, or damage overlay updates during it put us straight back in
+	STOP_PROCESSING(SSdamoverlays, src)
 
 /mob/living/carbon/human/Stat()
 	..()
@@ -310,10 +360,10 @@
 	dat += "<tr><td><hr></td></tr>"
 	if(get_location_accessible(src, BODY_ZONE_PRECISE_GROIN, skipundies = TRUE))
 		dat += "<tr><td><BR><B>Legwear:</B> <A href='?src=[REF(src)];legwearsthing=1'>[!legwear_socks ? "Nothing" : "Remove"]</A></td></tr>"
-		var/modular_chastity_row = modular_strippanel_chastity_row()
-		if(modular_chastity_row)
+		var/chastity_row = modular_strippanel_chastity_row()
+		if(chastity_row)
 			dat += "<tr><td><hr></td></tr>"
-			dat += modular_chastity_row
+			dat += chastity_row
 #endif
 
 	dat += {"</table>"}
@@ -497,75 +547,12 @@
 		hud_used.clock.update_icon()
 
 /mob/living/carbon/human/update_health_hud()
-	if(!client || !hud_used)
+	if(!hud_used)
 		return
 	if(dna.species.update_health_hud())
 		return
 	else
-		if(hud_used.bloods)
-			var/bloodloss = ((BLOOD_VOLUME_NORMAL - blood_volume) / BLOOD_VOLUME_NORMAL) * 100
-
-			var/toxloss = getToxLoss()
-			var/oxyloss = getOxyLoss()
-			var/painpercent = get_complex_pain() / pain_threshold
-			painpercent = painpercent * 100
-
-			var/usedloss = 0
-			if(bloodloss > 0)
-				usedloss = bloodloss
-
-			hud_used.bloods.cut_overlays()
-			if(usedloss <= 0)
-				hud_used.bloods.icon_state = "dam0"
-				if(toxloss > 0)
-					var/toxoverlay
-					switch(toxloss)
-						if(1 to 20)
-							toxoverlay = "toxloss20"
-						if(21 to 49)
-							toxoverlay = "toxloss40"
-						if(50 to 79)
-							toxoverlay = "toxloss60"
-						if(80 to 99)
-							toxoverlay = "toxloss80"
-						if(100 to 999)
-							toxoverlay = "toxloss100"
-					hud_used.bloods.add_overlay(toxoverlay)
-
-				if(oxyloss > 0)
-					var/oxyoverlay
-					switch(oxyloss)
-						if(1 to 20)
-							oxyoverlay = "oxyloss20"
-						if(21 to 49)
-							oxyoverlay = "oxyloss40"
-						if(50 to 79)
-							oxyoverlay = "oxyloss60"
-						if(80 to 99)
-							oxyoverlay = "oxyloss80"
-						if(100 to 999)
-							oxyoverlay = "oxyloss100"
-					hud_used.bloods.add_overlay(oxyoverlay)
-			else
-				var/used = round(usedloss, 10)
-				if(used <= 80)
-					hud_used.bloods.icon_state = "dam[used]"
-				else
-					hud_used.bloods.icon_state = "damelse"
-			if(painpercent > 0)
-				var/painoverlay
-				switch(painpercent)
-					if(1 to 29)
-						painoverlay = "painloss20"
-					if(30 to 59)
-						painoverlay = "painloss40"
-					if(60 to 79)
-						painoverlay = "painloss60"
-					if(80 to 99)
-						painoverlay = "painloss80"
-					if(100 to 999)
-						painoverlay = "painloss100"
-				hud_used.bloods.add_overlay(painoverlay)
+		update_blood_hud()
 
 /*		if(hud_used.healthdoll)
 			hud_used.healthdoll.cut_overlays()
@@ -596,72 +583,112 @@
 					hud_used.healthdoll.add_overlay(mutable_appearance('icons/mob/screen_gen.dmi', "[t]7"))
 			else
 				hud_used.healthdoll.icon_state = "healthdoll_DEAD"*/
+		. = update_stamina_hud() || update_energy_hud() || update_temperature_hud()
 
-		if(hud_used.stamina)
-			if(stat != DEAD)
-				. = 1
-				if(stamina >= max_stamina)
-					hud_used.stamina.icon_state = "stam0"
-				else if(stamina > max_stamina*0.90)
-					hud_used.stamina.icon_state = "stam10"
-				else if(stamina > max_stamina*0.80)
-					hud_used.stamina.icon_state = "stam20"
-				else if(stamina > max_stamina*0.70)
-					hud_used.stamina.icon_state = "stam30"
-				else if(stamina > max_stamina*0.60)
-					hud_used.stamina.icon_state = "stam40"
-				else if(stamina > max_stamina*0.50)
-					hud_used.stamina.icon_state = "stam50"
-				else if(stamina > max_stamina*0.40)
-					hud_used.stamina.icon_state = "stam60"
-				else if(stamina > max_stamina*0.30)
-					hud_used.stamina.icon_state = "stam70"
-				else if(stamina > max_stamina*0.20)
-					hud_used.stamina.icon_state = "stam80"
-				else if(stamina > max_stamina*0.10)
-					hud_used.stamina.icon_state = "stam90"
-				else if(stamina >= 0)
-					hud_used.stamina.icon_state = "stam100"
-		if(hud_used.energy)
-			if(stat != DEAD)
-				. = 1
-				if(energy <= 0)
-					hud_used.energy.icon_state = "energy0"
-				else if(energy > max_energy*0.90)
-					hud_used.energy.icon_state = "energy100"
-				else if(energy > max_energy*0.80)
-					hud_used.energy.icon_state = "energy90"
-				else if(energy > max_energy*0.70)
-					hud_used.energy.icon_state = "energy80"
-				else if(energy > max_energy*0.60)
-					hud_used.energy.icon_state = "energy70"
-				else if(energy > max_energy*0.50)
-					hud_used.energy.icon_state = "energy60"
-				else if(energy > max_energy*0.40)
-					hud_used.energy.icon_state = "energy50"
-				else if(energy > max_energy*0.30)
-					hud_used.energy.icon_state = "energy40"
-				else if(energy > max_energy*0.20)
-					hud_used.energy.icon_state = "energy30"
-				else if(energy > max_energy*0.10)
-					hud_used.energy.icon_state = "energy20"
-				else if(energy > 0)
-					hud_used.energy.icon_state = "energy10"
-		if(hud_used.temperature)
-			if(stat != DEAD)
-				. = 1
-				if(bodytemperature >= BODYTEMP_NORMAL_MIN && bodytemperature <= BODYTEMP_NORMAL_MAX)
-					hud_used.temperature.icon_state = "tempnormal"
-				else if(bodytemperature < BODYTEMP_NORMAL_MIN && bodytemperature >= BODYTEMP_COLD_LEVEL_ONE_MAX)
-					hud_used.temperature.icon_state = "tempcold"
-				else if(bodytemperature < BODYTEMP_COLD_LEVEL_ONE_MAX)
-					hud_used.temperature.icon_state = "tempverycold"
-				else if(bodytemperature >= BODYTEMP_NORMAL_MAX && bodytemperature <= BODYTEMP_HEAT_LEVEL_ONE_MAX)
-					hud_used.temperature.icon_state = "temphot"
-				else if(bodytemperature > BODYTEMP_HEAT_LEVEL_ONE_MAX)
-					hud_used.temperature.icon_state = "tempveryhot"
-		if(hud_used.zone_select)
-			hud_used.zone_select.update_icon()
+
+/mob/living/carbon/human/proc/update_temperature_hud()
+	if(isnull(hud_used?.temperature) || stat == DEAD)
+		return FALSE
+	if(bodytemperature >= BODYTEMP_NORMAL_MIN && bodytemperature <= BODYTEMP_NORMAL_MAX)
+		hud_used.temperature.icon_state = "tempnormal"
+	else if(bodytemperature < BODYTEMP_NORMAL_MIN && bodytemperature >= BODYTEMP_COLD_LEVEL_ONE_MAX)
+		hud_used.temperature.icon_state = "tempcold"
+	else if(bodytemperature < BODYTEMP_COLD_LEVEL_ONE_MAX)
+		hud_used.temperature.icon_state = "tempverycold"
+	else if(bodytemperature >= BODYTEMP_NORMAL_MAX && bodytemperature <= BODYTEMP_HEAT_LEVEL_ONE_MAX)
+		hud_used.temperature.icon_state = "temphot"
+	else if(bodytemperature > BODYTEMP_HEAT_LEVEL_ONE_MAX)
+		hud_used.temperature.icon_state = "tempveryhot"
+	var/atom/movable/screen/temperature/tempicon = hud_used.temperature
+	var/turf/open/floor/F = loc
+	if(isfloorturf(F) && F.heat)
+		if(!tempicon.heated_tile)
+			tempicon.heated_tile = TRUE
+			tempicon.add_overlay("tempheated")
+	else if(tempicon.heated_tile)
+		tempicon.heated_tile = FALSE
+		tempicon.cut_overlay("tempheated")
+
+/mob/living/carbon/human/update_stamina_hud()
+	if(!hud_used || stat == DEAD || !hud_used.stamina)
+		return FALSE
+	var/ratio = max_stamina ? (1 - (stamina / max_stamina)) : 0
+	hud_used.stamina.set_meter_fill(ratio, "stam100", "stam20", "stam10")
+	return TRUE
+
+/mob/living/carbon/human/update_energy_hud()
+	if(!hud_used || stat == DEAD || !hud_used.energy)
+		return FALSE
+	var/ratio = max_energy ? (energy / max_energy) : 0
+	hud_used.energy.set_meter_fill(ratio, "energy100", "energy20", "energy10")
+	return TRUE
+
+/mob/living/carbon/human/update_blood_hud()
+	if(!hud_used?.bloods)
+		return FALSE
+	var/bloodloss = ((BLOOD_VOLUME_NORMAL - blood_volume) / BLOOD_VOLUME_NORMAL) * 100
+
+	var/toxloss = getToxLoss()
+	var/oxyloss = getOxyLoss()
+	var/painpercent = get_complex_pain() / pain_threshold
+	painpercent = painpercent * 100
+
+	var/usedloss = 0
+	if(bloodloss > 0)
+		usedloss = bloodloss
+
+	var/toxoverlay = null
+	var/oxyoverlay = null
+	var/painoverlay = null
+	if(usedloss <= 0)
+		hud_used.bloods.icon_state = "dam0"
+		if(toxloss > 0)
+			switch(toxloss)
+				if(1 to 20)
+					toxoverlay = "toxloss20"
+				if(21 to 49)
+					toxoverlay = "toxloss40"
+				if(50 to 79)
+					toxoverlay = "toxloss60"
+				if(80 to 99)
+					toxoverlay = "toxloss80"
+				if(100 to 999)
+					toxoverlay = "toxloss100"
+
+		if(oxyloss > 0)
+			switch(oxyloss)
+				if(1 to 20)
+					oxyoverlay = "oxyloss20"
+				if(21 to 49)
+					oxyoverlay = "oxyloss40"
+				if(50 to 79)
+					oxyoverlay = "oxyloss60"
+				if(80 to 99)
+					oxyoverlay = "oxyloss80"
+				if(100 to 999)
+					oxyoverlay = "oxyloss100"
+	else
+		var/used = round(usedloss, 10)
+		if(used <= 80)
+			hud_used.bloods.icon_state = "dam[used]"
+		else
+			hud_used.bloods.icon_state = "damelse"
+	if(painpercent > 0)
+		switch(painpercent)
+			if(1 to 29)
+				painoverlay = "painloss20"
+			if(30 to 59)
+				painoverlay = "painloss40"
+			if(60 to 79)
+				painoverlay = "painloss60"
+			if(80 to 99)
+				painoverlay = "painloss80"
+			if(100 to 999)
+				painoverlay = "painloss100"
+	var/atom/movable/screen/healths/blood/blood_hud = hud_used.bloods
+	if(istype(blood_hud))
+		blood_hud.update_indicator_states(toxoverlay, oxyoverlay, painoverlay)
+	return TRUE
 
 /mob/living/carbon/human/fully_heal(admin_revive = FALSE, break_restraints = FALSE)
 	dna?.species.spec_fully_heal(src)
@@ -671,12 +698,24 @@
 	spill_embedded_objects()
 	set_heartattack(FALSE)
 	drunkenness = 0
-	return ..()
+	sunder_stacks = 0
+	. = ..()
+	mark_zone_selector_hud_dirty()
 
 /mob/living/carbon/human/check_weakness(obj/item/weapon, mob/living/attacker)
 	. = ..()
 	if (dna && dna.species)
 		. += dna.species.check_species_weakness(weapon, attacker)
+
+/**
+ * Whether this body is a temporary shell a player is piloting rather than their own.
+ *
+ * Currently the wildshape forms and werewolf. Both roots cover every shell and new forms are
+ * subtypes, so they are caught without touching each species. The OOC card must never be captured
+ * out of one or stamped onto one, see [/datum/mind/proc/transfer_to].
+ */
+/mob/living/carbon/human/proc/is_shapeshift_shell()
+	return istype(src, /mob/living/carbon/human/species/wildshape) || istype(src, /mob/living/carbon/human/species/werewolf)
 
 /mob/living/carbon/human/is_literate()
 	if(mind)
@@ -718,6 +757,8 @@
 			if(alert(usr,"The next prompt will not have a Nevermind option. Are you sure you want this?","ITS NOT REVERSIBLE","Yes","Nevermind") == "Yes")
 				var/choice = alert(usr,"What would you like to purge?","ITS TOO LATE NOW","Flavor","Notes","Extra")
 				if(choice)
+					var/datum/mind/purge_mind = mind || last_mind
+					purge_mind?.player_card?.vv_purge(choice)
 					switch(choice)
 						if("Flavor")
 							flavortext = null
@@ -758,6 +799,8 @@
 			return
 		if(alert(usr,"This will irreversibly purge this ENTIRE character's slot (OOC, FT, OOC Ex.)","PURGE","PURGE","Nevermind") == "PURGE")
 			if(alert(usr,"This cannot be undone. Are you sure?","DON'T FATFINGER THIS","Yes","No") == "Yes")
+				var/datum/mind/purge_mind = mind || last_mind
+				purge_mind?.player_card?.vv_purge("All")
 				flavortext = null
 				nsfwflavortext = null
 				ooc_extra_img = null
@@ -793,16 +836,7 @@
 	if(href_list[VV_HK_REAPPLY_PREFS])
 		if(!check_rights(R_SPAWN))
 			return
-		if(!client || !client.prefs)
-			return
-		//make reapply prefs work for gnolls
-		if(dna?.species?.id == "gnoll")
-			if(!apply_gnoll_preferences(FALSE))
-				reapply_live_preferences()
-			set_blindness(0)
-			regenerate_icons()
-		else
-			reapply_live_preferences()
+		admin_pref_refresh(usr)
 	if(href_list[VV_HK_SET_SPECIES])
 		if(!check_rights(R_SPAWN))
 			return
@@ -1077,9 +1111,12 @@
 	RETURN_TYPE(/obj/item/organ/breasts)
 	return getorganslot(ORGAN_SLOT_BREASTS)
 
-/mob/living/carbon/human/proc/is_fertile()
+/mob/living/carbon/human/proc/is_fertile(orifice = SEX_PART_CUNT)
+	if(orifice & SEX_PART_TAIL_MAW)
+		var/obj/item/organ/tail/manticore/tail = get_manticore_tail(src)
+		return tail?.fertility
 	var/obj/item/organ/vagina/vagina = getorganslot(ORGAN_SLOT_VAGINA)
-	return vagina.fertility
+	return vagina?.fertility
 
 /mob/living/carbon/human/proc/is_virile()
 	var/obj/item/organ/testicles/testicles = getorganslot(ORGAN_SLOT_TESTICLES)
@@ -1150,6 +1187,8 @@
 	H.heatstroke_timer_id = null
 	var/def_zone = BODY_ZONE_HEAD
 	var/obj/item/bodypart/BP = H.get_bodypart(def_zone)
+	if(!BP)
+		return
 	for(var/datum/wound/W in BP.wounds)
 		if(istype(W, /datum/wound/heatexhaustion)||istype(W, /datum/wound/heatstroke))
 			return
@@ -1210,9 +1249,18 @@
 	if(protection > 0)
 		(final_delta -= (three_quarter_delta * protection))
 
+	if(base_delta < 0 && HAS_TRAIT(src, TRAIT_COLD_RESISTANCE))
+		final_delta *= 0.75
+	else if(base_delta > 0 && HAS_TRAIT(src, TRAIT_HEAT_RESISTANCE))
+		final_delta *= 0.5
+
 	adjust_bodytemperature(final_delta)
 
 	return final_delta
+
+/mob/living/carbon/human/adjust_bodytemperature(amount, min_temp = 0, max_temp = 600)
+	. = ..()
+	update_temperature_hud()
 
 /*/mob/living/carbon/human/proc/update_heretic_commune()
 	if(HAS_TRAIT(src, TRAIT_COMMIE) || HAS_TRAIT(src, TRAIT_CABAL) || HAS_TRAIT(src, TRAIT_HORDE) || HAS_TRAIT(src, TRAIT_DEPRAVED))
@@ -1224,6 +1272,115 @@
 		verbs -= /mob/living/carbon/human/verb/show_heretics
 		verbs -= /mob/living/carbon/human/verb/bad_omen*/
 
+/// Reapplies the player's saved preferences to this character, as the VV "Reapply Preferences" option does.
+/// admin is told if their saved name could not be applied.
+/mob/living/carbon/human/proc/reapply_preferences(mob/admin)
+	if(!client?.prefs)
+		return FALSE
+	var/saved_name = get_saved_name()
+	//make reapply prefs work for gnolls
+	if(dna?.species?.id == "gnoll")
+		if(!apply_gnoll_preferences(FALSE, keep_name = TRUE))
+			reapply_live_preferences()
+		set_blindness(0)
+		regenerate_icons()
+	else
+		reapply_live_preferences()
+	take_saved_name(saved_name, admin)
+	return TRUE
+
+/// The name this character's player has saved for them: their gnoll name as a gnoll, otherwise their slot's name.
+/mob/living/carbon/human/proc/get_saved_name()
+	if(dna?.species?.id == "gnoll" && client.prefs.gnoll_prefs)
+		return client.prefs.gnoll_prefs.ensure_gnoll_name()
+	return client.prefs.real_name
+
+/// real_name with saved_name in place of the saved name it was built from, keeping what roles added around it,
+/// so "Ser John" becomes "Ser Jon". Null if the name was replaced outright, as by a villain's chosen name or a marriage.
+/mob/living/carbon/human/proc/get_refreshed_name(saved_name)
+	// Padded so the old name only matches as whole words
+	var/base_at = findtextEx(" [real_name] ", " [pref_base_name] ")
+	if(!base_at)
+		return null
+	return copytext(real_name, 1, base_at) + saved_name + copytext(real_name, base_at + length(pref_base_name))
+
+/// Renames a character already in the round to their saved name, keeping any title or surname a role gave them. Returns TRUE if it did.
+/mob/living/carbon/human/proc/take_saved_name(saved_name, mob/admin)
+	if(!saved_name || saved_name == pref_base_name)
+		return FALSE
+	// Not spawned from their preferences, such as an admin-made character, so the name is not theirs to replace
+	if(!pref_base_name)
+		to_chat(admin, span_warning("[real_name] was not spawned from a saved character, so they keep their name."))
+		return FALSE
+	var/list/randomise = client.prefs.randomise
+	if(randomise[RANDOM_NAME] || (randomise[RANDOM_NAME_ANTAG] && mind?.special_role))
+		to_chat(admin, span_warning("[ckey] has random names on, so [real_name] keeps their name."))
+		return FALSE
+	var/new_name = get_refreshed_name(saved_name)
+	if(!new_name)
+		to_chat(admin, span_warning("[real_name] was renamed in the round, so they keep that name rather than their saved [saved_name]."))
+		return FALSE
+	// Spawning refuses a saved name already in the round, so this does too
+	if((new_name in GLOB.chosen_names) || (saved_name in GLOB.chosen_names))
+		to_chat(admin, span_warning("Another character is already named [saved_name], so [real_name] keeps their name."))
+		return FALSE
+	var/old_name = real_name
+	// Roles that add a title do not all update this, so it holds either the full name or the saved name it was built from
+	var/name_index = GLOB.chosen_names.Find(old_name)
+	if(name_index)
+		GLOB.chosen_names[name_index] = new_name
+	else
+		name_index = GLOB.chosen_names.Find(pref_base_name)
+		if(name_index)
+			GLOB.chosen_names[name_index] = saved_name
+	fully_replace_character_name(old_name, new_name)
+	pref_base_name = saved_name
+	rename_character_records(old_name, new_name)
+	log_admin("[key_name(admin)]'s preferences refresh renamed [old_name] to [new_name].")
+	to_chat(admin, span_notice("[old_name] now goes by [new_name]."))
+	return TRUE
+
+/// Moves everything kept under a character's name over to their new one, so a rename cannot lift an outlawry,
+/// excommunication or bounty, or make everyone who knew them forget them.
+/proc/rename_character_records(old_name, new_name)
+	for(var/list/names as anything in list(GLOB.outlawed_players, GLOB.excommunicated_players, GLOB.apostasy_players, GLOB.court_agents))
+		var/index = names.Find(old_name)
+		if(index)
+			names[index] = new_name
+	if(old_name in GLOB.lord_titles)
+		GLOB.lord_titles[new_name] = GLOB.lord_titles[old_name]
+		GLOB.lord_titles -= old_name
+	// Kept under both, as logs from before the rename name them the old way
+	if(old_name in GLOB.character_ckey_list)
+		GLOB.character_ckey_list[new_name] = GLOB.character_ckey_list[old_name]
+	for(var/datum/bounty/bounty as anything in GLOB.head_bounties)
+		if(bounty.target == old_name)
+			bounty.target = new_name
+		if(bounty.target_hidden == old_name)
+			bounty.target_hidden = new_name
+	for(var/datum/mind/knower as anything in SSticker.minds)
+		var/list/known = knower.known_people
+		if(known && (old_name in known))
+			known[new_name] = known[old_name]
+			known -= old_name
+
+/// Admin preferences refresh from VV, the player panel and the ticket window.
+/mob/living/carbon/human/proc/admin_pref_refresh(mob/admin)
+	if(!client?.prefs)
+		to_chat(admin, span_warning("[src] has no connected player whose preferences can be reapplied."))
+		return FALSE
+	// copy_to would set_species the saved species onto the wildshape or werewolf form itself
+	if(is_shapeshift_shell())
+		to_chat(admin, span_warning("[src] is shapeshifted. Wait until they return to their own body."))
+		return FALSE
+	// Logged before acting so the record survives a runtime partway through copy_to
+	log_admin("[key_name(admin)] refreshed the preferences of [key_name(src)].")
+	message_admins(span_adminnotice("[key_name_admin(admin)] refreshed the preferences of [key_name_admin(src)]."))
+	admin_ticket_log(src, "<font color='green'>[key_name_admin(admin)] refreshed the preferences of [key_name_admin(src)].</font>")
+	reapply_preferences(admin)
+	return TRUE
+
+/// Everything but the name, which reapply_preferences() sets. copy_to would hand them a random one, as theirs is always in GLOB.chosen_names mid-round
 /mob/living/carbon/human/proc/reapply_live_preferences()
 	if(!client?.prefs)
 		return FALSE
@@ -1232,7 +1389,7 @@
 	var/list/preserved_languages = language_holder?.languages?.Copy()
 	var/selected_default_language = language_holder?.selected_default_language
 
-	client.prefs.copy_to(src, TRUE, FALSE)
+	client.prefs.copy_to(src, TRUE, FALSE, keep_name = TRUE)
 	refresh_live_vocal_preferences()
 
 	if(language_holder && length(preserved_languages))
@@ -1266,3 +1423,11 @@
 
 /mob/living/carbon/human/Topic(href, href_list)
 	..()
+
+/mob/living/carbon/human/do_attack_animation(atom/A, visual_effect_icon, obj/item/used_item, no_effect, item_animation_override, datum/intent/used_intent, simplified)
+	update_proj_parry_timer()
+	. = ..()
+
+///This is used to allow the thrown item "deflect". Minor and mostly just for aurafarming. Hooks into do_attack_animation because it's the most reliable access to a "valid" attack.
+/mob/living/carbon/human/proc/update_proj_parry_timer()
+	projectile_parry_timer = (world.time + PROJ_PARRY_TIMER)

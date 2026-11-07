@@ -24,6 +24,8 @@ GLOBAL_LIST_EMPTY(antagonists)
 	var/show_name_in_check_antagonists = FALSE //Will append antagonist name in admin listings - use for categories that share more than one antag type
 	var/increase_votepwr = TRUE
 	var/rogue_enabled = FALSE
+	/// If TRUE, the player will be prompted to confirm the antag role. If declined, the antag is removed.
+	var/requires_confirmation = FALSE
 
 	///flags used by storytellers
 	var/antag_flags = NONE
@@ -90,13 +92,27 @@ GLOBAL_LIST_EMPTY(antagonists)
 	hud.leave_hud(mob_override)
 	set_antag_hud(mob_override, null)
 
+/// Removes this antag's own hud, unless a later antag has since moved the player onto a different one
+/datum/antagonist/proc/remove_own_antag_hud()
+	if(!owner?.current || !antag_hud_type || owner.antag_hud != GLOB.huds[antag_hud_type])
+		return
+	remove_antag_hud(antag_hud_type, owner.current)
+
 //Assign default team and creates one for one of a kind team antagonists
 /datum/antagonist/proc/create_team(datum/team/team)
 	return
 
 //Proc called when the datum is given to a mind.
 /datum/antagonist/proc/on_gain()
+	set waitfor = FALSE
 	if(owner && owner.current)
+		if(requires_confirmation && !silent && owner.current.client)
+			var/response = tgui_alert(owner.current, "You have been selected as a [name]. Do you accept this role?", "Antagonist Confirmation", list("Accept", "Decline"), timeout = 30 SECONDS)
+			if(response != "Accept")
+				log_admin("[key_name(owner)] declined the [name] antagonist role.")
+				message_admins("[key_name_admin(owner)] declined the [name] antagonist role.")
+				on_removal()
+				return
 //		if(!silent)
 //			greet()
 		apply_innate_effects()

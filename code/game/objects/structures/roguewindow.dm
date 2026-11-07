@@ -1,7 +1,7 @@
 
 /obj/structure/roguewindow
 	name = "window"
-	desc = "A glass window."
+	desc = "A glass window, it separates a small slice of civilization from the savage outside world."
 	icon = 'icons/roguetown/misc/roguewindow.dmi'
 	icon_state = "window-solid"
 	layer = TABLE_LAYER
@@ -21,22 +21,27 @@
 	break_sound = "glassbreak"
 	destroy_sound = 'sound/combat/hits/onwood/destroywalldoor.ogg'
 	var/window_lock_strength
+	var/wallpress = TRUE
 	var/list/repair_costs = list(/obj/item/grown/log/tree/small, /obj/item/natural/glass)
 	var/repair_skill = /datum/skill/craft/carpentry
 	var/repair_started = FALSE
 
 /obj/structure/roguewindow/Initialize(mapload)
 	update_icon()
-	..()
+	return ..()
+
+/obj/structure/roguewindow/can_wallpress()
+	return wallpress && !climbable && density
 
 /obj/structure/roguewindow/obj_destruction(damage_flag)
 	..()
 
-/obj/structure/roguewindow/attacked_by(obj/item/I, mob/living/user)
-	..()
+/obj/structure/roguewindow/attacked_by(obj/item/item, mob/living/user)
+	if(..())
+		add_forensic_action(user, "hit with [format_text(item.name)]")
 	if(obj_broken || obj_destroyed)
 		var/obj/effect/track/structure/new_track = SStracks.get_track(/obj/effect/track/structure, get_turf(src))
-		message_admins("Window [obj_destroyed ? "destroyed" : "broken"] by [user?.real_name] using [I] [ADMIN_JMP(src)]")
+		message_admins("Window [obj_destroyed ? "destroyed" : "broken"] by [user?.real_name] using [item] [ADMIN_JMP(src)]")
 		log_admin("Window [obj_destroyed ? "destroyed" : "broken"] by [user?.real_name] at X:[src.x] Y:[src.y] Z:[src.z] in area: [get_area(src)]")
 		new_track.handle_creation(user)
 
@@ -68,7 +73,7 @@
 				playsound(user, 'sound/misc/wood_saw.ogg', 100, TRUE)
 				icon_state = "[base_state]"
 				density = TRUE
-				climbable = FALSE
+				set_climbable(FALSE)
 				brokenstate = FALSE
 				obj_broken = FALSE
 				opacity = initial(opacity)
@@ -104,14 +109,20 @@
 	repair_costs = list(/obj/item/natural/glass, /obj/item/natural/glass)
 
 /obj/structure/roguewindow/stained/silver
+	name = "psydonite window"
+	desc = "A glass window stained in the silver of the Otavan Orthodoxy, it represents a time of hope long past which refuses to die."
 	icon_state = "stained-silver"
 	base_state = "stained-silver"
 
 /obj/structure/roguewindow/stained/yellow
+	name = "astratan window"
+	desc = "A glass window stained in the gold of the Sun Cult, it represents the undying authority of their faith, ever-present as the wilting gaze of the sun above."
 	icon_state = "stained-yellow"
 	base_state = "stained-yellow"
 
 /obj/structure/roguewindow/stained/zizo
+	name = "zizite window"
+	desc = "A glass window stained in the red of the Zizo Cabal, it represents the endless ambition of their cause and goddess, that which is unsatisfied with just one life to live."
 	icon_state = "stained-zizo"
 	base_state = "stained-zizo"
 
@@ -128,12 +139,12 @@
 	lockdir = dir
 
 /obj/structure/roguewindow/openclose/Initialize(mapload)
-	..()
+	. = ..()
 	lockdir = dir
 	icon_state = base_state
 
 /obj/structure/roguewindow/openclose/reinforced
-	desc = "A glass window. This one looks reinforced with a metal mesh."
+	desc = "A glass window reinforced with a metal mesh, it still won't keep you alive tonight."
 	icon_state = "reinforcedwindowdir"
 	base_state = "reinforcedwindow"
 	max_integrity = 800
@@ -146,12 +157,12 @@
 	lockdir = dir
 
 /obj/structure/roguewindow/openclose/reinforced/Initialize(mapload)
-	..()
+	. = ..()
 	lockdir = dir
 	icon_state = base_state
 
 /obj/structure/roguewindow/openclose/reinforced/brick
-	desc = "A glass window. This one looks reinforced with a metal frame."
+	desc = "A glass window reinforced with a metal frame, it should keep you safe from the outside world."
 	icon_state = "brickwindowdir"
 	base_state = "brickwindow"
 	max_integrity = 1000	//Better than reinforced by a bit; metal frame.
@@ -161,18 +172,20 @@
 	lockdir = dir
 
 /obj/structure/roguewindow/openclose/reinforced/brick/Initialize(mapload)
-	..()
+	. = ..()
 	lockdir = dir
 	icon_state = base_state
 
 /obj/structure/roguewindow/harem1
 	name = "harem window"
+	desc = "An opaque glass window, you can only imagine what is on the other side."
 	icon_state = "harem1-solid"
 	base_state = "harem1-solid"
 	repair_costs = list(/obj/item/natural/glass, /obj/item/natural/glass)
 
 /obj/structure/roguewindow/harem2
 	name = "harem window"
+	desc = "An opaque glass window, it promises delights and opportunities you may never see realized."
 	icon_state = "harem2-solid"
 	base_state = "harem2-solid"
 	opacity = TRUE
@@ -180,15 +193,21 @@
 
 /obj/structure/roguewindow/harem3
 	name = "harem window"
+	desc = "An opaque glass window, the blur of colors and shapes behind it serve as ever more temptation to the mind."
 	icon_state = "harem3-solid"
 	base_state = "harem3-solid"
 	repair_costs = list(/obj/item/natural/glass, /obj/item/natural/glass)
+
+/obj/structure/roguewindow/harem3/frosted
+	name = "frosted glass window"
+	desc = "A frosted glass window, it obscures the view but focuses the mind on just what could be hiding behind it."
+	opacity = TRUE
 
 /obj/structure/roguewindow/openclose/Initialize(mapload)
 	lockdir = dir
 	icon_state = base_state
 	GLOB.TodUpdate += src
-	..()
+	return ..()
 
 /obj/structure/roguewindow/openclose/Destroy()
 	GLOB.TodUpdate -= src
@@ -282,6 +301,7 @@
 				else
 					playsound(loc, 'sound/items/pickbad.ogg', 40, TRUE)
 					obj_integrity = break_me
+					add_forensic_action(user, "broke prying the latch")
 					held_knife.take_damage(10, BRUTE, "blunt")
 					to_chat(user, "<span class='warning'>Clack. [100 - pickchance]% chance to fuck up.</span>")
 					add_sleep_experience(opener, /datum/skill/misc/lockpicking, opener.STAINT/4)
@@ -291,7 +311,7 @@
 					new /obj/item/natural/glass_shard (get_turf(src))
 					new /obj/effect/decal/cleanable/debris/glassy(get_turf(src))
 					brokenstate = TRUE
-					climbable = TRUE
+					set_climbable(TRUE)
 					opacity = FALSE
 					update_icon()
 					var/obj/effect/track/structure/new_track = new(get_turf(src))
@@ -301,6 +321,10 @@
 						span_danger("I fucked up!! FUCK!!"))
 					return
 
+			if(!lockpicking_check_done)
+				add_forensic_action(user, "tried to pry the latch")
+			else
+				add_forensic_action(user, climbable ? "pried the latch shut" : "pried the latch open")
 			if(climbable && (lockpicking_check_done == 1))
 				close_up(user)
 				user.visible_message(
@@ -320,20 +344,20 @@
 /obj/structure/roguewindow/proc/open_up(mob/user)
 	visible_message(span_info("[user] opens [src]."))
 	playsound(src, 'sound/foley/doors/windowup.ogg', 100, FALSE)
-	climbable = TRUE
+	set_climbable(TRUE)
 	opacity = FALSE
 	update_icon()
 
 /obj/structure/roguewindow/proc/force_open()
 	playsound(src, 'sound/foley/doors/windowup.ogg', 100, FALSE)
-	climbable = TRUE
+	set_climbable(TRUE)
 	opacity = FALSE
 	update_icon()
 
 /obj/structure/roguewindow/proc/close_up(mob/user)
 	visible_message(span_info("[user] closes [src]."))
 	playsound(src, 'sound/foley/doors/windowdown.ogg', 100, FALSE)
-	climbable = FALSE
+	set_climbable(FALSE)
 	opacity = TRUE
 	update_icon()
 
@@ -350,12 +374,21 @@
 	if(isliving(mover))
 		if(mover.throwing)
 			if(!climbable)
+				var/mob/living/thrown = mover
+				var/mob/thrower = thrown.throwing.thrower
+				if(thrower && thrower != thrown)
+					add_forensic_action(thrower, "threw [thrown.real_name] ([thrown.ckey || "no player"]) into it")
+					add_forensic_action(thrown, "thrown into it by [thrower.real_name]")
+				else
+					// A jump, or no one to name
+					add_forensic_action(thrown, "thrown into it")
+					thrower = thrown
 				if(!iscarbon(mover))
-					take_damage(10)
+					take_damage_from(thrower, 10)
 				else
 					var/mob/living/carbon/dude = mover
 					var/base_damage = 20
-					take_damage(base_damage * (dude.STASTR / 10))
+					take_damage_from(thrower, base_damage * (dude.STASTR / 10))
 			if(brokenstate || climbable)
 				if(ishuman(mover))
 					var/mob/living/carbon/human/dude = mover
@@ -372,7 +405,7 @@
 	else if(isitem(mover))
 		var/obj/item/I = mover
 		if(I.throwforce >= 10)
-			take_damage(I.throwforce)
+			take_damage_from(I.throwing?.thrower, I.throwforce, cause = "with thrown [format_text(I.name)]")
 			if(brokenstate)
 				return 1
 		else
@@ -385,9 +418,6 @@
 	else
 		return ..()
 
-/obj/structure/roguewindow/attack_paw(mob/living/user)
-	attack_hand(user)
-
 /obj/structure/roguewindow/attack_hand(mob/living/user)
 	. = ..()
 	if(.)
@@ -396,7 +426,8 @@
 		return
 	user.changeNext_move(CLICK_CD_INTENTCAP)
 	if(HAS_TRAIT(user, TRAIT_BASHDOORS))
-		src.take_damage(15)
+		add_forensic_action(user, "bashed")
+		take_damage_from(user, 15)
 		return
 	src.visible_message(span_info("[user] knocks on [src]."))
 	add_fingerprint(user)
@@ -409,9 +440,10 @@
 		loud_message("A loud crash of a window getting broken rings out", hearing_distance = 14)
 		new /obj/item/natural/glass_shard (get_turf(src))
 		new /obj/effect/decal/cleanable/debris/glassy(get_turf(src))
-		climbable = TRUE
+		set_climbable(TRUE)
 		brokenstate = TRUE
 		opacity = FALSE
+		on_forced_break(damage_flag)
 	update_icon()
 	..()
 

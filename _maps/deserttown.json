@@ -5,7 +5,9 @@
 	"traits": [{"Up": true}, {"Up": true, "Down": true}, {"Up": true, "Down": true}, {"Up": true, "Down": true}, {"Down": true}],
     "other_z": [
         "_maps/map_files/deserttown/deserttownalt.json",
-		"_maps/map_files/otherz/wretchfort.json"
+        "_maps/map_files/deserttown/advspawndesert.json",
+        "_maps/map_files/otherz/wretchfort.json",
+		"_maps/map_files/otherz/lichlair.json"
 	],
 	"minetype": null,
 	"space_empty_levels": 0,

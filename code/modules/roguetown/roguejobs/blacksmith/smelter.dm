@@ -63,7 +63,10 @@
 				to_chat(user, span_warning("\The [src] is currently smelting. Wait for it to finish, or douse it with water to retrieve items from it."))
 				return
 			if(!length(contained_items))
-				to_chat(user, span_warn("Nothing to retrieve from inside."))
+				if(user.m_intent == MOVE_INTENT_SNEAK)
+					add_item(attacking_item, user)
+					return
+				to_chat(user, span_warn("Nothing to retrieve from inside. Use SNEAK to smelt the tongs."))
 				return
 			var/obj/item/item_to_remove = contained_items[contained_items.len]
 			contained_items -= item_to_remove
@@ -253,7 +256,7 @@
 		alloy = /obj/item/ingot/bronze
 	else if(purifiedalloy == 11)
 		max_contained_items = 4
-		alloy = /obj/item/ingot/purifiedaalloy // 3 aaslag, 1 gold, makes 4 purified alloy, 2 is too few to be worth doing anything with
+		alloy = /obj/item/ingot/gilbranze // 3 aaslag, 1 gold, makes 4 gilbranze, 2 is too few to be worth doing anything with
 	else if(blacksteelalloy == 7)
 		max_contained_items = 2 // 1 ingot is too few to do anything meaningful with and makes prices too high to sell anything
 		alloy = /obj/item/ingot/blacksteel
